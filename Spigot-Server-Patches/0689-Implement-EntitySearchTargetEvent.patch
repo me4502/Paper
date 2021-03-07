@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Miller <mnmiller1@me.com>
+Date: Sun, 7 Mar 2021 21:26:00 +1000
+Subject: [PATCH] Implement EntitySearchTargetEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalNearestAttackableTarget.java b/src/main/java/net/minecraft/server/PathfinderGoalNearestAttackableTarget.java
+index c0721c7fe479c8f753b8f48197a70dcd1ecfef5f..4fa72a32663794c1bed1f0a97d83417cee54aff2 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalNearestAttackableTarget.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalNearestAttackableTarget.java
+@@ -4,6 +4,8 @@ import java.util.EnumSet;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
+ 
++import io.papermc.paper.event.entity.EntitySearchTargetEvent; // Paper
++
+ public class PathfinderGoalNearestAttackableTarget<T extends EntityLiving> extends PathfinderGoalTarget {
+ 
+     protected final Class<T> a;
+@@ -43,12 +45,21 @@ public class PathfinderGoalNearestAttackableTarget<T extends EntityLiving> exten
+     }
+ 
+     protected void g() {
++        // Paper start - call EntitySearchTargetEvent
++        EntityLiving lastTarget = this.c;
+         if (this.a != EntityHuman.class && this.a != EntityPlayer.class) {
+             this.c = this.e.world.b(this.a, this.d, this.e, this.e.locX(), this.e.getHeadY(), this.e.locZ(), this.a(this.k()));
+         } else {
+             this.c = this.e.world.a(this.d, this.e, this.e.locX(), this.e.getHeadY(), this.e.locZ());
+         }
+-
++        EntitySearchTargetEvent event = new EntitySearchTargetEvent(this.e.getBukkitLivingEntity(), this.c == null ? null : this.c.getBukkitLivingEntity());
++        this.e.world.getServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            this.c = lastTarget;
++        } else {
++            this.c = event.getTarget() == null ? null : ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
++        }
++        // Paper end
+     }
+ 
+     @Override
